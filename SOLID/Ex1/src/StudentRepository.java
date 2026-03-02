@@ -1,8 +1,8 @@
-/**
- * Responsibility: abstract the persistence mechanism for student records.
- * OnboardingService depends on this interface, not on FakeDb directly.
- */
+import java.util.Collections;
+import java.util.List;
+
 public interface StudentRepository {
-    void save(StudentRecord record);
+    void save(StudentRecord r);
     int count();
+    List<StudentRecord> all();
 }

@@ -1,54 +1,50 @@
 import java.util.*;
 
 public class HostelFeeCalculator {
-    private final FakeBookingRepo repo;
-    private final List<RoomPricing> roomPricings;
-    private final List<AddOnPricing> addOnPricings;
+    private final BookingRepository repo;
+    private final List<Room> rooms;
+    private final List<AddOnService> addOnServices;
+    private final double deposit;
 
-    public HostelFeeCalculator(FakeBookingRepo repo) {
+    public HostelFeeCalculator(BookingRepository repo, List<Room> rooms, List<AddOnService> addOnServices, double deposit
+    ) {
         this.repo = repo;
-        this.roomPricings = List.of(
-            new SingleRoomPricing(),
-            new DoubleRoomPricing(),
-            new TripleRoomPricing(),
-            new DeluxeRoomPricing()
-        );
-        this.addOnPricings = List.of(
-            new MessPricing(),
-            new LaundryPricing(),
-            new GymPricing()
-        );
+        this.rooms = rooms;
+        this.addOnServices = addOnServices;
+        this.deposit = deposit;
+
     }
 
+    // OCP violation: switch + add-on branching + printing + persistence.
     public void process(BookingRequest req) {
+
         Money monthly = calculateMonthly(req);
-        Money deposit = new Money(5000.00);
+        Money deposit = new Money(this.deposit);
 
         ReceiptPrinter.print(req, monthly, deposit);
 
-        String bookingId = "H-" + (7000 + new Random(1).nextInt(1000));
+        String bookingId = "H-" + (7000 + new Random(1).nextInt(1000)); // deterministic-ish
         repo.save(bookingId, req, monthly, deposit);
     }
 
-    private Money calculateMonthly(BookingRequest req) {
-        Money total = new Money(0.0);
-
-        for (RoomPricing rp : roomPricings) {
-            if (rp.matches(req.roomType)) {
-                total = total.plus(rp.monthlyRate());
+    private Money calculateMonthly(BookingRequest req){
+        double monthlyBase = 0.0;
+        for (Room r : rooms) {
+            if (r.getTypeId() == req.roomType) {
+                monthlyBase = r.getMonthlyRate();
                 break;
             }
         }
-
+        // Find Add-On Prices
+        double addOnTotal = 0.0;
         for (AddOn a : req.addOns) {
-            for (AddOnPricing ap : addOnPricings) {
-                if (ap.matches(a)) {
-                    total = total.plus(ap.price());
-                    break;
+            for (AddOnService service : addOnServices) {
+                if (service.getType() == a) {
+                    addOnTotal += service.getPrice();
                 }
             }
         }
 
-        return total;
+        return new Money(monthlyBase+addOnTotal);
     }
 }

@@ -11,7 +11,12 @@ public class Main {
 
         email.send(n);
         sms.send(n);
-        wa.send(n);
+        try {
+            wa.send(n);
+        } catch (RuntimeException ex) {
+            System.out.println("WA ERROR: " + ex.getMessage());
+            audit.add("WA failed");
+        }
 
         System.out.println("AUDIT entries=" + audit.size());
     }
